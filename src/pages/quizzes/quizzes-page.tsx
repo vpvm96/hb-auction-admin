@@ -5,12 +5,13 @@ import {
   useReactTable,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { ChevronLeft, ChevronRight, Plus, Shuffle, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Search, Shuffle, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
 import { EmptyState } from '@/shared/ui/empty-state';
+import { Input } from '@/shared/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
 import { fmtDateTime, fmtNumber } from '@/shared/lib/format';
 import { quizzesApi, quizzesKeys } from '@/entities/quiz/api/quizzes.api';
@@ -21,13 +22,16 @@ import { QuizEditorDrawer, type QuizEditorState } from './quiz-editor-drawer';
 export function QuizzesPage() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(20);
+  const [keyword, setKeyword] = useState('');
   const [editor, setEditor] = useState<QuizEditorState | null>(null);
   const [confirmDel, setConfirmDel] = useState<Quiz | null>(null);
   const qc = useQueryClient();
 
+  const params = { page, size, keyword: keyword.trim() || undefined };
+
   const query = useQuery({
-    queryKey: quizzesKeys.list({ page, size }),
-    queryFn: () => quizzesApi.list({ page, size }),
+    queryKey: quizzesKeys.list(params),
+    queryFn: () => quizzesApi.list(params),
     placeholderData: (prev) => prev,
   });
 
@@ -138,6 +142,25 @@ export function QuizzesPage() {
           </>
         }
       />
+
+      <div className="flex items-center gap-2 px-6 pb-3">
+        <span className="text-[11px] font-semibold text-muted-foreground tabular-nums">
+          {fmtNumber(totalElements)}건
+        </span>
+        <span className="flex-1" />
+        <div className="relative w-72">
+          <Search className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={keyword}
+            onChange={(e) => {
+              setKeyword(e.target.value);
+              setPage(1);
+            }}
+            placeholder="질문 텍스트 검색"
+            className="h-8 pl-7 text-xs"
+          />
+        </div>
+      </div>
 
       <div className="px-6 pb-6">
         <Card className="overflow-hidden">

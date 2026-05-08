@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, Hash, Send } from 'lucide-react';
-import { useEffect } from 'react';
+import { Check, Hash, RefreshCw, Send } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/shared/ui/button';
@@ -24,9 +24,19 @@ import {
 import type {
   NotificationTemplate,
   TemplateChannel,
+  TemplatePreviewResponse,
 } from '@/entities/notification-template/model/types';
 
 const SNAKE_CASE = /^[a-z][a-z0-9_]*$/;
+const TEMPLATE_VAR = /\{\{(\w+)\}\}/g;
+
+function extractVariables(text: string): string[] {
+  const out: string[] = [];
+  for (const m of text.matchAll(TEMPLATE_VAR)) {
+    if (!out.includes(m[1])) out.push(m[1]);
+  }
+  return out;
+}
 
 const schema = z.object({
   templateKey: z
@@ -69,6 +79,9 @@ export function TemplateEditorDrawer({ state, onClose }: TemplateEditorDrawerPro
     },
   });
 
+  const [varValues, setVarValues] = useState<Record<string, string>>({});
+  const [preview, setPreview] = useState<TemplatePreviewResponse | null>(null);
+
   useEffect(() => {
     if (!open) return;
     form.reset({
@@ -77,6 +90,8 @@ export function TemplateEditorDrawer({ state, onClose }: TemplateEditorDrawerPro
       bodyTemplate: tpl?.bodyTemplate ?? '',
       channel: tpl?.channel ?? 'Push',
     });
+    setVarValues({});
+    setPreview(null);
   }, [open, tpl, form]);
 
   const mutation = useMutation({
@@ -93,6 +108,14 @@ export function TemplateEditorDrawer({ state, onClose }: TemplateEditorDrawerPro
   const bodyTemplate = form.watch('bodyTemplate') ?? '';
   const templateKey = form.watch('templateKey') ?? '';
   const keyValid = SNAKE_CASE.test(templateKey);
+
+  const detectedVars = extractVariables(`${titleTemplate}\n${bodyTemplate}`);
+
+  const previewMutation = useMutation({
+    mutationFn: () =>
+      templatesApi.preview({ titleTemplate, bodyTemplate, variables: varValues }),
+    onSuccess: (data) => setPreview(data),
+  });
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
@@ -196,7 +219,17 @@ export function TemplateEditorDrawer({ state, onClose }: TemplateEditorDrawerPro
               />
             </Field>
 
-            <PreviewBox title={titleTemplate} body={bodyTemplate} />
+            <PreviewSection
+              titleTemplate={titleTemplate}
+              bodyTemplate={bodyTemplate}
+              detectedVars={detectedVars}
+              varValues={varValues}
+              setVarValues={setVarValues}
+              preview={preview}
+              onRefresh={() => previewMutation.mutate()}
+              isFetching={previewMutation.isPending}
+              error={previewMutation.error as Error | null}
+            />
 
             {isEdit ? (
               <div className="flex items-center gap-3 rounded-md bg-muted px-3.5 py-3 text-[11px] text-muted-foreground">
@@ -241,12 +274,74 @@ export function TemplateEditorDrawer({ state, onClose }: TemplateEditorDrawerPro
   );
 }
 
-function PreviewBox({ title, body }: { title: string; body: string }) {
+interface PreviewSectionProps {
+  titleTemplate: string;
+  bodyTemplate: string;
+  detectedVars: string[];
+  varValues: Record<string, string>;
+  setVarValues: (v: Record<string, string>) => void;
+  preview: TemplatePreviewResponse | null;
+  onRefresh: () => void;
+  isFetching: boolean;
+  error: Error | null;
+}
+
+function PreviewSection({
+  titleTemplate,
+  bodyTemplate,
+  detectedVars,
+  varValues,
+  setVarValues,
+  preview,
+  onRefresh,
+  isFetching,
+  error,
+}: PreviewSectionProps) {
+  // preview가 있을 때만 변수 치환된 결과 사용, 아니면 raw 템플릿
+  const renderedTitle = preview?.renderedTitle ?? titleTemplate;
+  const renderedBody = preview?.renderedBody ?? bodyTemplate;
+
   return (
     <div>
-      <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
-        미리보기
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+          미리보기
+        </span>
+        {detectedVars.length > 0 ? (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={onRefresh}
+            disabled={isFetching}
+          >
+            <RefreshCw className={cn('size-3', isFetching && 'animate-spin')} />
+            <span>{preview ? '다시 렌더' : '변수 치환'}</span>
+          </Button>
+        ) : null}
       </div>
+
+      {detectedVars.length > 0 ? (
+        <div className="mb-2 grid grid-cols-2 gap-1.5 rounded-md border border-border bg-muted/40 p-2">
+          {detectedVars.map((name) => (
+            <label key={name} className="flex items-center gap-1.5">
+              <span className="shrink-0 font-mono text-[11px] font-semibold text-muted-foreground">
+                {`{{${name}}}`}
+              </span>
+              <input
+                type="text"
+                value={varValues[name] ?? ''}
+                onChange={(e) =>
+                  setVarValues({ ...varValues, [name]: e.target.value })
+                }
+                placeholder={`${name} 값`}
+                className="h-7 min-w-0 flex-1 rounded-sm border border-input bg-card px-2 text-[12px]"
+              />
+            </label>
+          ))}
+        </div>
+      ) : null}
+
       <div className="rounded-xl bg-[var(--hb-fg-1)] p-4">
         <div className="flex items-start gap-2.5 rounded-lg bg-card p-2.5">
           <div className="inline-flex size-6 shrink-0 items-center justify-center rounded-md bg-primary text-[9px] font-bold tracking-wider text-primary-foreground">
@@ -256,16 +351,27 @@ function PreviewBox({ title, body }: { title: string; body: string }) {
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <span className="font-bold text-foreground">HB-Hammer</span>
               <span>· 지금</span>
+              {preview ? (
+                <span className="ml-1 inline-flex items-center gap-0.5 rounded-sm bg-[var(--hb-green-100)] px-1.5 text-[9px] font-bold text-[var(--hb-green-900)]">
+                  RENDERED
+                </span>
+              ) : null}
             </div>
             <div className="mt-0.5 text-[13px] font-bold">
-              {title || '제목 미리보기'}
+              {renderedTitle || '제목 미리보기'}
             </div>
-            <div className="mt-0.5 text-xs leading-snug text-foreground/80">
-              {body || '본문 미리보기'}
+            <div className="mt-0.5 whitespace-pre-wrap text-xs leading-snug text-foreground/80">
+              {renderedBody || '본문 미리보기'}
             </div>
           </div>
         </div>
       </div>
+
+      {error ? (
+        <p className="mt-1.5 text-[11px] text-[var(--hb-red-700)]">
+          미리보기 실패: {error.message}
+        </p>
+      ) : null}
     </div>
   );
 }

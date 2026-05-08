@@ -6,11 +6,13 @@ import {
   Copy,
   Download,
   RefreshCw,
+  Search,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/shared/ui/button';
 import { Card } from '@/shared/ui/card';
 import { EmptyState } from '@/shared/ui/empty-state';
+import { Input } from '@/shared/ui/input';
 import { MethodBadge } from '@/shared/ui/method-badge';
 import { StatusCodeBadge } from '@/shared/ui/status-code-badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/ui/table';
@@ -30,16 +32,44 @@ const STATUS_FILTERS: { value: number | null; label: string; cls: string }[] = [
 
 const METHOD_FILTERS = ['GET', 'POST', 'PUT', 'DELETE'] as const;
 
+type RangePreset = 'all' | '24h' | '7d' | '30d';
+
+const RANGE_FILTERS: { value: RangePreset; label: string }[] = [
+  { value: 'all', label: '전체 기간' },
+  { value: '24h', label: '24시간' },
+  { value: '7d', label: '7일' },
+  { value: '30d', label: '30일' },
+];
+
+function rangeToFromIso(preset: RangePreset): string | undefined {
+  if (preset === 'all') return undefined;
+  const now = Date.now();
+  const ms = preset === '24h' ? 86_400_000 : preset === '7d' ? 7 * 86_400_000 : 30 * 86_400_000;
+  return new Date(now - ms).toISOString();
+}
+
 export function ErrorsPage() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(20);
   const [statusFilter, setStatusFilter] = useState<number | null>(null);
   const [methodFilter, setMethodFilter] = useState<string | null>(null);
+  const [range, setRange] = useState<RangePreset>('all');
+  const [uri, setUri] = useState('');
+  const [errorCode, setErrorCode] = useState('');
   const [expanded, setExpanded] = useState<number | string | null>(null);
 
+  const params = {
+    page,
+    size,
+    status: statusFilter ?? undefined,
+    uri: uri.trim() || undefined,
+    errorCode: errorCode.trim() || undefined,
+    from: rangeToFromIso(range),
+  };
+
   const query = useQuery({
-    queryKey: errorLogsKeys.list({ page, size, status: statusFilter ?? undefined }),
-    queryFn: () => errorLogsApi.list({ page, size, status: statusFilter ?? undefined }),
+    queryKey: errorLogsKeys.list(params),
+    queryFn: () => errorLogsApi.list(params),
     placeholderData: (prev) => prev,
   });
 
@@ -79,54 +109,106 @@ export function ErrorsPage() {
         }
       />
 
-      <div className="flex flex-wrap items-center gap-2 px-6 pb-3">
-        {STATUS_FILTERS.map((f) => {
-          const active = statusFilter === f.value;
-          return (
-            <button
-              key={String(f.value)}
-              type="button"
-              onClick={() => {
-                setStatusFilter(f.value);
+      <div className="flex flex-col gap-2 px-6 pb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {STATUS_FILTERS.map((f) => {
+            const active = statusFilter === f.value;
+            return (
+              <button
+                key={String(f.value)}
+                type="button"
+                onClick={() => {
+                  setStatusFilter(f.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  'inline-flex h-[30px] items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors',
+                  active
+                    ? 'border-primary bg-accent text-accent-foreground'
+                    : cn(
+                        'border-dashed border-[var(--hb-border-strong)] bg-card hover:border-primary',
+                        f.cls,
+                      ),
+                )}
+              >
+                <span>{f.label}</span>
+              </button>
+            );
+          })}
+          <span className="mx-1 h-5 w-px bg-border" />
+          {METHOD_FILTERS.map((m) => {
+            const active = methodFilter === m;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  setMethodFilter(active ? null : m);
+                  setPage(1);
+                }}
+                className={cn(
+                  'inline-flex h-[30px] items-center rounded-full border px-3 text-xs font-semibold transition-colors',
+                  active
+                    ? 'border-primary bg-accent text-accent-foreground'
+                    : 'border-dashed border-[var(--hb-border-strong)] bg-card text-foreground/80 hover:border-primary',
+                )}
+              >
+                {m}
+              </button>
+            );
+          })}
+          <span className="mx-1 h-5 w-px bg-border" />
+          {RANGE_FILTERS.map((r) => {
+            const active = range === r.value;
+            return (
+              <button
+                key={r.value}
+                type="button"
+                onClick={() => {
+                  setRange(r.value);
+                  setPage(1);
+                }}
+                className={cn(
+                  'inline-flex h-[30px] items-center rounded-full border px-3 text-xs font-semibold transition-colors',
+                  active
+                    ? 'border-primary bg-accent text-accent-foreground'
+                    : 'border-dashed border-[var(--hb-border-strong)] bg-card text-foreground/80 hover:border-primary',
+                )}
+              >
+                {r.label}
+              </button>
+            );
+          })}
+          <span className="flex-1" />
+          <span className="text-[11px] font-semibold text-muted-foreground">
+            {fmtNumber(items.length)}건 표시 중
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 size-3 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={uri}
+              onChange={(e) => {
+                setUri(e.target.value);
                 setPage(1);
               }}
-              className={cn(
-                'inline-flex h-[30px] items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors',
-                active
-                  ? 'border-primary bg-accent text-accent-foreground'
-                  : cn('border-dashed border-[var(--hb-border-strong)] bg-card hover:border-primary', f.cls),
-              )}
-            >
-              <span>{f.label}</span>
-            </button>
-          );
-        })}
-        <span className="mx-1 h-5 w-px bg-border" />
-        {METHOD_FILTERS.map((m) => {
-          const active = methodFilter === m;
-          return (
-            <button
-              key={m}
-              type="button"
-              onClick={() => {
-                setMethodFilter(active ? null : m);
+              placeholder="URI 패턴 (예: /api/users)"
+              className="h-8 pl-7 font-mono text-xs"
+            />
+          </div>
+          <div className="relative w-56">
+            <Input
+              value={errorCode}
+              onChange={(e) => {
+                setErrorCode(e.target.value);
                 setPage(1);
               }}
-              className={cn(
-                'inline-flex h-[30px] items-center rounded-full border px-3 text-xs font-semibold transition-colors',
-                active
-                  ? 'border-primary bg-accent text-accent-foreground'
-                  : 'border-dashed border-[var(--hb-border-strong)] bg-card text-foreground/80 hover:border-primary',
-              )}
-            >
-              {m}
-            </button>
-          );
-        })}
-        <span className="flex-1" />
-        <span className="text-[11px] font-semibold text-muted-foreground">
-          {fmtNumber(items.length)}건 표시 중
-        </span>
+              placeholder="errorCode (예: NOT_FOUND)"
+              className="h-8 font-mono text-xs"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="px-6 pb-6">
