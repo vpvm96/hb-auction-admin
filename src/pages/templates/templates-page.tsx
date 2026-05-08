@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Loader2, Plus, Search } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/shared/ui/button';
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
 import { EmptyState } from '@/shared/ui/empty-state';
@@ -28,6 +28,8 @@ const CHANNEL_FILTERS: { value: ChannelFilter; label: string }[] = [
   { value: 'Both', label: 'Both' },
 ];
 
+const PAGE_SIZE = 20;
+
 export function TemplatesPage() {
   const [editor, setEditor] = useState<TemplateEditorState | null>(null);
   const [confirmDel, setConfirmDel] = useState<NotificationTemplate | null>(null);
@@ -35,9 +37,18 @@ export function TemplatesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const qc = useQueryClient();
 
-  const query = useQuery({
-    queryKey: templatesKeys.list(),
-    queryFn: () => templatesApi.list(),
+  const filterParams = {
+    channel: channelFilter ?? undefined,
+    keyword: searchQuery.trim() || undefined,
+  };
+
+  const query = useInfiniteQuery({
+    queryKey: templatesKeys.list({ ...filterParams, size: PAGE_SIZE }),
+    queryFn: ({ pageParam }) =>
+      templatesApi.list({ ...filterParams, page: pageParam, size: PAGE_SIZE }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) =>
+      lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined,
   });
 
   const deleteMutation = useMutation({
@@ -48,20 +59,34 @@ export function TemplatesPage() {
     },
   });
 
-  const all = query.data ?? [];
-  const lower = searchQuery.toLowerCase();
-  const filtered = all.filter((t) => {
-    if (channelFilter && t.channel !== channelFilter) return false;
-    if (lower && !t.templateKey.toLowerCase().includes(lower) && !t.titleTemplate.includes(searchQuery))
-      return false;
-    return true;
-  });
+  const items = query.data?.pages.flatMap((p) => p.items) ?? [];
+  const totalElements = query.data?.pages[0]?.totalElements ?? 0;
+
+  // IntersectionObserver로 sentinel이 보이면 다음 페이지 자동 fetch
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && query.hasNextPage && !query.isFetchingNextPage) {
+          query.fetchNextPage();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [query.hasNextPage, query.isFetchingNextPage, query.fetchNextPage, items.length]);
+
+  const isInitialLoading = query.isLoading;
+  const noFilters = !channelFilter && !searchQuery.trim();
 
   return (
     <div>
       <PageHeader
         title="알림 템플릿"
-        description={`총 ${fmtNumber(all.length)}개 · 키 기준 오름차순 (snake_case)`}
+        description={`총 ${fmtNumber(totalElements)}개 · 키 기준 오름차순 (snake_case)`}
         breadcrumb={['관리자', '콘텐츠', '알림 템플릿']}
         actions={
           <>
@@ -111,36 +136,62 @@ export function TemplatesPage() {
       </div>
 
       <div className="px-6 pb-6">
-        {query.isLoading ? (
+        {isInitialLoading ? (
           <div className="rounded-md border border-border bg-card p-12 text-center text-sm text-muted-foreground">
             불러오는 중…
           </div>
-        ) : filtered.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="rounded-md border border-border bg-card">
             <EmptyState
               title={
-                all.length === 0
+                noFilters
                   ? '등록된 알림 템플릿이 없습니다.'
                   : '조건에 맞는 템플릿이 없습니다.'
               }
               description={
-                all.length === 0
+                noFilters
                   ? '‘템플릿 추가’ 버튼으로 새 템플릿을 만드세요.'
                   : '필터를 초기화하거나 새 템플릿을 추가하세요.'
               }
             />
           </div>
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-3">
-            {filtered.map((t) => (
-              <TemplateCard
-                key={t.id}
-                template={t}
-                onEdit={() => setEditor({ mode: 'edit', template: t })}
-                onDelete={() => setConfirmDel(t)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-3">
+              {items.map((t) => (
+                <TemplateCard
+                  key={t.id}
+                  template={t}
+                  onEdit={() => setEditor({ mode: 'edit', template: t })}
+                  onDelete={() => setConfirmDel(t)}
+                />
+              ))}
+            </div>
+
+            <div
+              ref={sentinelRef}
+              className="mt-4 flex h-12 items-center justify-center text-[11px] font-semibold text-muted-foreground"
+            >
+              {query.isFetchingNextPage ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Loader2 className="size-3 animate-spin" />
+                  더 불러오는 중…
+                </span>
+              ) : query.hasNextPage ? (
+                <button
+                  type="button"
+                  onClick={() => query.fetchNextPage()}
+                  className="rounded-md border border-dashed border-border bg-card px-3 py-1.5 hover:border-primary"
+                >
+                  더 보기
+                </button>
+              ) : (
+                <span className="opacity-60">
+                  마지막입니다 · 총 {fmtNumber(totalElements)}건
+                </span>
+              )}
+            </div>
+          </>
         )}
       </div>
 
