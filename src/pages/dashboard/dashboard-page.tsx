@@ -57,7 +57,7 @@ export function DashboardPage() {
   const templates = templatesQ.data ?? [];
 
   return (
-    <div className="px-6 pb-8">
+    <div className="pb-8">
       <PageHeader
         title="대시보드"
         description={`HB Auction 관리자 · ${fmtDate(new Date())} 기준`}
@@ -70,7 +70,7 @@ export function DashboardPage() {
         }
       />
 
-      <div className="-mx-6 grid grid-cols-1 gap-3 px-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 px-6 sm:grid-cols-2 lg:grid-cols-4">
         <KpiStat
           label="전체 사용자"
           value={fmtNumber(usersQ.data?.totalElements)}
@@ -102,7 +102,7 @@ export function DashboardPage() {
         />
       </div>
 
-      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-[2fr_1fr]">
+      <div className="mt-3 grid grid-cols-1 gap-3 px-6 lg:grid-cols-[2fr_1fr]">
         <Card className="overflow-hidden p-0">
           <div className="flex items-center border-b border-border px-4 py-3.5">
             <div className="flex-1">
@@ -190,7 +190,7 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div className="mt-3 grid grid-cols-1 gap-3 px-6 lg:grid-cols-2">
         <Card className="overflow-hidden p-0">
           <div className="flex items-center border-b border-border px-4 py-3.5">
             <div className="flex-1">
