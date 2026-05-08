@@ -8,8 +8,12 @@ import { Label } from '@/shared/ui/label';
 import { ROUTES } from '@/shared/config/routes';
 import { useAuthStore } from '../model/auth-store';
 
+// TEMP: backend /auth/login is not implemented yet — defaults are pre-filled
+// with the dev credentials so a single click logs in. Remove once the real API exists.
+const DEV_DEFAULTS = { email: 'admin', password: '1234' } as const;
+
 const schema = z.object({
-  email: z.string().min(1, '이메일을 입력해주세요').email('이메일 형식이 올바르지 않습니다'),
+  email: z.string().min(1, '아이디를 입력해주세요'),
   password: z.string().min(1, '비밀번호를 입력해주세요'),
 });
 
@@ -22,12 +26,10 @@ export function LoginForm() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: DEV_DEFAULTS,
   });
 
   const onSubmit = (values: FormValues) => {
-    // TEMP: backend /auth/login is not implemented yet — accept any input.
-    // Replace this block with `loginMutation.mutate(values)` once the API exists.
     setAuth({
       accessToken: 'mock-token',
       user: {
@@ -44,12 +46,12 @@ export function LoginForm() {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="email">이메일</Label>
+        <Label htmlFor="email">아이디</Label>
         <Input
           id="email"
-          type="email"
-          autoComplete="email"
-          placeholder="admin@hobom.dev"
+          type="text"
+          autoComplete="username"
+          placeholder="admin"
           {...form.register('email')}
         />
         {form.formState.errors.email ? (
@@ -75,7 +77,7 @@ export function LoginForm() {
       </div>
 
       <p className="rounded-md bg-[var(--hb-yellow-100)] px-3 py-2 text-[11px] text-[var(--hb-yellow-700)]">
-        로그인 API 미구현 — 아무 이메일/비밀번호로 진입 가능합니다.
+        로그인 API 미구현 — 개발용 계정 <strong>admin / 1234</strong>가 미리 입력되어 있습니다.
       </p>
 
       <Button type="submit" className="mt-1">

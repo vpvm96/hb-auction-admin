@@ -5,7 +5,6 @@ import {
   ChevronRight,
   Copy,
   Download,
-  ExternalLink,
   RefreshCw,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -257,50 +256,64 @@ function ErrorRows({
         </TableCell>
         <TableCell className="whitespace-nowrap text-foreground/90">{log.message}</TableCell>
       </TableRow>
-      {expanded ? (
-        <TableRow className="hover:bg-transparent">
-          <TableCell colSpan={8} className="bg-muted/40 px-4 py-4 pl-12">
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <div>
-                <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                  Stack Trace
-                </div>
-                <pre className="m-0 max-h-52 overflow-auto rounded-md bg-[var(--hb-fg-1)] p-3 font-mono text-[11px] leading-relaxed text-[var(--hb-cyan-100)]">
-                  {log.stackTrace || '—'}
-                </pre>
-              </div>
-              <div>
-                <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-                  Request Body
-                </div>
-                {log.requestBody ? (
-                  <pre className="m-0 max-h-52 overflow-auto rounded-md border border-border bg-muted p-3 font-mono text-[11px] leading-relaxed text-foreground">
-                    {log.requestBody}
-                  </pre>
-                ) : (
-                  <div className="rounded-md border border-dashed border-border p-3 text-xs italic text-muted-foreground/70">
-                    요청 본문 없음
-                  </div>
+      <TableRow className={cn('hover:bg-transparent', !expanded && 'border-0')}>
+        <TableCell colSpan={8} className="h-auto p-0">
+          <div
+            className={cn(
+              'grid transition-[grid-template-rows] duration-300 ease-out',
+              expanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+            )}
+          >
+            <div className="overflow-hidden">
+              <div
+                className={cn(
+                  'bg-muted/40 px-4 py-4 pl-12 transition-[opacity,transform] duration-200 ease-out',
+                  expanded
+                    ? 'translate-y-0 opacity-100 delay-75'
+                    : '-translate-y-1 opacity-0',
                 )}
-                <div className="mt-2.5 flex gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => navigator.clipboard?.writeText(JSON.stringify(log, null, 2))}
-                  >
-                    <Copy className="size-3" />
-                    <span>전체 복사</span>
-                  </Button>
-                  <Button variant="secondary" size="sm">
-                    <ExternalLink className="size-3" />
-                    <span>이슈 등록</span>
-                  </Button>
+              >
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div>
+                    <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                      Stack Trace
+                    </div>
+                    <pre className="m-0 max-h-52 overflow-auto rounded-md bg-[var(--hb-fg-1)] p-3 font-mono text-[11px] leading-relaxed text-[var(--hb-cyan-100)]">
+                      {log.stackTrace || '—'}
+                    </pre>
+                  </div>
+                  <div>
+                    <div className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+                      Request Body
+                    </div>
+                    {log.requestBody ? (
+                      <pre className="m-0 max-h-52 overflow-auto rounded-md border border-border bg-muted p-3 font-mono text-[11px] leading-relaxed text-foreground">
+                        {log.requestBody}
+                      </pre>
+                    ) : (
+                      <div className="rounded-md border border-dashed border-border p-3 text-xs italic text-muted-foreground/70">
+                        요청 본문 없음
+                      </div>
+                    )}
+                    <div className="mt-2.5 flex gap-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() =>
+                          navigator.clipboard?.writeText(JSON.stringify(log, null, 2))
+                        }
+                      >
+                        <Copy className="size-3" />
+                        <span>전체 복사</span>
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </TableCell>
-        </TableRow>
-      ) : null}
+          </div>
+        </TableCell>
+      </TableRow>
     </>
   );
 }

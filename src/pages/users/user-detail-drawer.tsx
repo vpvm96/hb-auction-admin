@@ -6,8 +6,10 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
+  SheetDescription,
   SheetFooter,
   SheetHeader,
+  SheetTitle,
 } from '@/shared/ui/sheet';
 import { fmtDateTime } from '@/shared/lib/format';
 import { usersApi, usersKeys } from '@/entities/user/api/users.api';
@@ -42,14 +44,16 @@ export function UserDetailDrawer({ userId, fallback, onClose }: UserDetailDrawer
                 <AvatarFallback>{user.nickname?.[0] ?? '?'}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-bold tracking-tight">{user.nickname}</div>
-                <div className="truncate font-mono text-[11px] text-muted-foreground">
+                <SheetTitle className="truncate text-sm">{user.nickname}</SheetTitle>
+                <SheetDescription className="truncate font-mono text-[11px]">
                   {user.email}
-                </div>
+                </SheetDescription>
               </div>
             </>
           ) : (
-            <div className="text-sm text-muted-foreground">불러오는 중…</div>
+            <SheetTitle className="text-sm font-medium text-muted-foreground">
+              불러오는 중…
+            </SheetTitle>
           )}
         </SheetHeader>
 

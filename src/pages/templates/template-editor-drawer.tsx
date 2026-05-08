@@ -10,8 +10,10 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
+  SheetDescription,
   SheetFooter,
   SheetHeader,
+  SheetTitle,
 } from '@/shared/ui/sheet';
 import { fmtDateTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/utils';
@@ -100,14 +102,14 @@ export function TemplateEditorDrawer({ state, onClose }: TemplateEditorDrawerPro
             <Send className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-bold tracking-tight">
+            <SheetTitle className="text-sm">
               {isEdit ? '템플릿 수정' : '새 템플릿 만들기'}
-            </div>
-            <div className="font-mono text-[11px] text-muted-foreground">
+            </SheetTitle>
+            <SheetDescription className="font-mono text-[11px]">
               {isEdit
                 ? 'PUT /internal/notification-templates/{id}'
                 : 'POST /internal/notification-templates'}
-            </div>
+            </SheetDescription>
           </div>
         </SheetHeader>
 

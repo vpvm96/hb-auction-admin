@@ -9,8 +9,10 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
+  SheetDescription,
   SheetFooter,
   SheetHeader,
+  SheetTitle,
 } from '@/shared/ui/sheet';
 import { fmtDateTime } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/utils';
@@ -91,12 +93,12 @@ export function QuizEditorDrawer({ state, onClose }: QuizEditorDrawerProps) {
             <HelpCircle className="size-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-bold tracking-tight">
+            <SheetTitle className="text-sm">
               {isEdit ? `퀴즈 수정 #${quiz!.id}` : '새 퀴즈 만들기'}
-            </div>
-            <div className="font-mono text-[11px] text-muted-foreground">
+            </SheetTitle>
+            <SheetDescription className="font-mono text-[11px]">
               {isEdit ? 'PUT /internal/quizzes/{id}' : 'POST /internal/quizzes'}
-            </div>
+            </SheetDescription>
           </div>
         </SheetHeader>
 
