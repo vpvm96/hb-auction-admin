@@ -8,15 +8,18 @@ import { UsersPage } from '@/pages/users/users-page';
 import { QuizzesPage } from '@/pages/quizzes/quizzes-page';
 import { TemplatesPage } from '@/pages/templates/templates-page';
 import { ErrorsPage } from '@/pages/errors/errors-page';
+import { ErrorPage } from '@/pages/error/error-page';
 import { NotFoundPage } from '@/pages/not-found/not-found-page';
 
 export const router = createBrowserRouter([
   {
     path: ROUTES.login,
     element: <LoginPage />,
+    errorElement: <ErrorPage />,
   },
   {
     element: <ProtectedRoute />,
+    errorElement: <ErrorPage />,
     children: [
       {
         element: <AppShell />,
