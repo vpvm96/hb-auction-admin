@@ -15,14 +15,9 @@ import { MethodBadge } from '@/shared/ui/method-badge';
 import { StatusCodeBadge } from '@/shared/ui/status-code-badge';
 import { ROUTES } from '@/shared/config/routes';
 import { fmtDate, fmtDateTime, fmtNumber, fmtRelative } from '@/shared/lib/format';
+import { dashboardApi, dashboardKeys } from '@/entities/dashboard/api/dashboard.api';
 import { errorLogsApi, errorLogsKeys } from '@/entities/error-log/api/error-logs.api';
-import {
-  templatesApi,
-  templatesKeys,
-} from '@/entities/notification-template/api/templates.api';
-import { quizzesApi, quizzesKeys } from '@/entities/quiz/api/quizzes.api';
 import { usersApi, usersKeys } from '@/entities/user/api/users.api';
-import type { TemplateChannel } from '@/entities/notification-template/model/types';
 import { UserStatusBadge } from '@/pages/users/user-status-badge';
 import { PageHeader } from '@/widgets/page-header/page-header';
 
@@ -30,16 +25,16 @@ export function DashboardPage() {
   const queries = useQueries({
     queries: [
       {
+        queryKey: dashboardKeys.counts(),
+        queryFn: () => dashboardApi.counts(),
+      },
+      {
+        queryKey: dashboardKeys.stats(7),
+        queryFn: () => dashboardApi.stats(7),
+      },
+      {
         queryKey: usersKeys.list({ page: 1, size: 5 }),
         queryFn: () => usersApi.list({ page: 1, size: 5 }),
-      },
-      {
-        queryKey: quizzesKeys.list({ page: 1, size: 1 }),
-        queryFn: () => quizzesApi.list({ page: 1, size: 1 }),
-      },
-      {
-        queryKey: templatesKeys.list(),
-        queryFn: () => templatesApi.list(),
       },
       {
         queryKey: errorLogsKeys.list({ page: 1, size: 6 }),
@@ -48,13 +43,14 @@ export function DashboardPage() {
     ],
   });
 
-  const [usersQ, quizzesQ, templatesQ, errorsQ] = queries;
+  const [countsQ, statsQ, usersQ, errorsQ] = queries;
   const refetchAll = () => queries.forEach((q) => q.refetch());
   const isFetching = queries.some((q) => q.isFetching);
 
+  const counts = countsQ.data;
+  const stats = statsQ.data;
   const recentUsers = usersQ.data?.items ?? [];
   const recentErrors = errorsQ.data?.items ?? [];
-  const templates = templatesQ.data ?? [];
 
   return (
     <div className="pb-8">
@@ -73,30 +69,30 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 gap-3 px-6 sm:grid-cols-2 lg:grid-cols-4">
         <KpiStat
           label="전체 사용자"
-          value={fmtNumber(usersQ.data?.totalElements)}
+          value={fmtNumber(counts?.users)}
           icon={Users}
           to={ROUTES.users}
+          hint={
+            stats?.users
+              ? `Active ${fmtNumber(stats.users.active)} · Suspended ${fmtNumber(stats.users.suspended)} · Deleted ${fmtNumber(stats.users.deleted)}`
+              : undefined
+          }
         />
         <KpiStat
           label="등록된 퀴즈"
-          value={fmtNumber(quizzesQ.data?.totalElements)}
+          value={fmtNumber(counts?.quizzes)}
           icon={HelpCircle}
           to={ROUTES.quizzes}
         />
         <KpiStat
           label="알림 템플릿"
-          value={fmtNumber(templates.length)}
+          value={fmtNumber(counts?.notificationTemplates)}
           icon={Send}
           to={ROUTES.templates}
-          hint={
-            templates.length > 0
-              ? `Push ${templates.filter((t) => t.channel === 'Push').length} · InApp ${templates.filter((t) => t.channel === 'InApp').length} · Both ${templates.filter((t) => t.channel === 'Both').length}`
-              : undefined
-          }
         />
         <KpiStat
           label="에러 로그"
-          value={fmtNumber(errorsQ.data?.totalElements)}
+          value={fmtNumber(counts?.errorLogs)}
           icon={AlertTriangle}
           to={ROUTES.errors}
         />
@@ -146,47 +142,46 @@ export function DashboardPage() {
 
         <Card className="overflow-hidden p-0">
           <div className="border-b border-border px-4 py-3.5">
-            <div className="text-sm font-bold">API 엔드포인트</div>
-            <div className="mt-0.5 text-[11px] text-muted-foreground">OpenAPI 3.1 · v0.0.1</div>
+            <div className="text-sm font-bold">에러 트렌드</div>
+            <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+              GET /internal/dashboard/stats?trendDays=7
+            </div>
           </div>
-          {[
-            { tag: 'Users', icon: Users, count: 2, color: 'var(--hb-indigo-500)' },
-            { tag: 'Quizzes', icon: HelpCircle, count: 5, color: 'var(--hb-cyan-500)' },
-            {
-              tag: 'Notification Templates',
-              icon: Send,
-              count: 6,
-              color: 'var(--hb-green-500)',
-            },
-            {
-              tag: 'Error Logs',
-              icon: AlertTriangle,
-              count: 1,
-              color: 'var(--hb-red-500)',
-            },
-          ].map((g) => {
-            const Icon = g.icon;
-            return (
-              <div
-                key={g.tag}
-                className="flex items-center gap-3 border-t border-border/50 px-4 py-2.5"
-              >
-                <span
-                  className="inline-flex size-7 items-center justify-center rounded-md"
-                  style={{
-                    background: `color-mix(in srgb, ${g.color} 15%, transparent)`,
-                    color: g.color,
-                  }}
-                >
-                  <Icon className="size-3.5" />
-                </span>
-                <span className="flex-1 text-[13px] font-semibold">{g.tag}</span>
-                <span className="font-mono text-xs font-semibold text-muted-foreground">
-                  {g.count} endpoint{g.count > 1 ? 's' : ''}
-                </span>
+          <div className="px-4 py-3.5">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold tabular-nums text-[var(--hb-red-700)]">
+                {fmtNumber(stats?.errorLogs.totalToday)}
+              </span>
+              <span className="text-[11px] font-semibold text-muted-foreground">
+                오늘 발생
+              </span>
+            </div>
+            <DailyTrendBars trend={stats?.errorLogs.dailyTrend ?? []} />
+          </div>
+          <div className="border-t border-border/50">
+            <div className="px-4 pt-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.06em] text-muted-foreground">
+              Top 에러 코드
+            </div>
+            {(stats?.errorLogs.topErrorCodes ?? []).length === 0 ? (
+              <div className="px-4 pb-3.5 text-[11px] italic text-muted-foreground/70">
+                집계된 에러 코드가 없습니다.
               </div>
-            );
-          })}
+            ) : (
+              (stats?.errorLogs.topErrorCodes ?? []).slice(0, 5).map((c) => (
+                <div
+                  key={c.errorCode}
+                  className="flex items-center gap-3 border-t border-border/50 px-4 py-2"
+                >
+                  <span className="flex-1 truncate font-mono text-[12px] font-semibold text-[var(--hb-red-700)]">
+                    {c.errorCode || '—'}
+                  </span>
+                  <span className="font-mono text-xs font-semibold tabular-nums text-foreground">
+                    {fmtNumber(c.count)}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
         </Card>
       </div>
 
@@ -236,39 +231,53 @@ export function DashboardPage() {
 
         <Card className="overflow-hidden p-0">
           <div className="border-b border-border px-4 py-3.5">
-            <div className="text-sm font-bold">알림 템플릿 채널 분포</div>
-            <div className="mt-0.5 text-[11px] text-muted-foreground">현재 활성 템플릿 기준</div>
+            <div className="text-sm font-bold">사용자 상태 분포</div>
+            <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+              GET /internal/dashboard/stats
+            </div>
           </div>
           <div className="p-4">
-            {(['Push', 'InApp', 'Both'] as TemplateChannel[]).map((ch) => {
-              const count = templates.filter((t) => t.channel === ch).length;
-              const pct = templates.length > 0 ? Math.round((count / templates.length) * 100) : 0;
-              const color =
-                ch === 'Push'
-                  ? 'var(--hb-indigo-500)'
-                  : ch === 'InApp'
-                    ? 'var(--hb-cyan-700)'
-                    : 'var(--hb-green-700)';
+            {(
+              [
+                {
+                  label: 'Active',
+                  count: stats?.users.active ?? 0,
+                  color: 'var(--hb-green-700)',
+                },
+                {
+                  label: 'Suspended',
+                  count: stats?.users.suspended ?? 0,
+                  color: 'var(--hb-yellow-700)',
+                },
+                {
+                  label: 'Deleted',
+                  count: stats?.users.deleted ?? 0,
+                  color: 'var(--hb-red-700)',
+                },
+              ] as const
+            ).map((s) => {
+              const total = stats?.users.total ?? 0;
+              const pct = total > 0 ? Math.round((s.count / total) * 100) : 0;
               return (
-                <div key={ch} className="mb-3.5 last:mb-0">
+                <div key={s.label} className="mb-3.5 last:mb-0">
                   <div className="mb-1.5 flex items-center justify-between">
-                    <span className="text-xs font-semibold">{ch}</span>
+                    <span className="text-xs font-semibold">{s.label}</span>
                     <span className="text-xs text-muted-foreground tabular-nums">
-                      <b className="text-foreground">{count}</b>건 · {pct}%
+                      <b className="text-foreground">{fmtNumber(s.count)}</b>명 · {pct}%
                     </span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full rounded-full transition-[width] duration-500"
-                      style={{ width: `${pct}%`, background: color }}
+                      style={{ width: `${pct}%`, background: s.color }}
                     />
                   </div>
                 </div>
               );
             })}
-            {templates.length === 0 && !templatesQ.isLoading ? (
+            {!stats && !statsQ.isLoading ? (
               <div className="py-2 text-center text-xs text-muted-foreground">
-                템플릿이 없습니다.
+                통계를 불러오지 못했습니다.
               </div>
             ) : null}
           </div>
@@ -301,6 +310,36 @@ function KpiStat({ label, value, hint, icon: Icon, to }: KpiStatProps) {
       <div className="mt-2 text-[28px] font-bold tracking-tight tabular-nums">{value}</div>
       {hint ? <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div> : null}
     </Link>
+  );
+}
+
+function DailyTrendBars({ trend }: { trend: { date: string; count: number }[] }) {
+  if (trend.length === 0) {
+    return (
+      <div className="mt-3 h-12 rounded-md border border-dashed border-border text-[11px] italic leading-[3rem] text-center text-muted-foreground/70">
+        트렌드 데이터 없음
+      </div>
+    );
+  }
+  const max = Math.max(1, ...trend.map((t) => t.count));
+  return (
+    <div className="mt-3 flex h-14 items-end gap-1">
+      {trend.map((t) => {
+        const pct = (t.count / max) * 100;
+        return (
+          <div
+            key={t.date}
+            className="group relative flex-1"
+            title={`${t.date} · ${t.count}건`}
+          >
+            <div
+              className="rounded-sm bg-[var(--hb-red-500)]/70 transition-colors group-hover:bg-[var(--hb-red-500)]"
+              style={{ height: `${Math.max(4, pct)}%` }}
+            />
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
