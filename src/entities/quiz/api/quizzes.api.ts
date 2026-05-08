@@ -2,8 +2,13 @@ import { http } from '@/shared/api/http';
 import type { Page, PageQuery } from '@/shared/types/api';
 import type { Quiz, QuizCreatePayload, QuizUpdatePayload } from '../model/types';
 
+export interface QuizzesQuery extends PageQuery {
+  /** 질문 텍스트 검색 키워드 */
+  keyword?: string;
+}
+
 export const quizzesApi = {
-  list: async (query: PageQuery = {}): Promise<Page<Quiz>> => {
+  list: async (query: QuizzesQuery = {}): Promise<Page<Quiz>> => {
     const { data } = await http.get<Page<Quiz>>('/internal/quizzes', { params: query });
     return data;
   },
@@ -30,7 +35,7 @@ export const quizzesApi = {
 
 export const quizzesKeys = {
   all: ['quizzes'] as const,
-  list: (query: PageQuery) => [...quizzesKeys.all, 'list', query] as const,
+  list: (query: QuizzesQuery) => [...quizzesKeys.all, 'list', query] as const,
   detail: (id: number) => [...quizzesKeys.all, 'detail', id] as const,
   random: (count: number) => [...quizzesKeys.all, 'random', count] as const,
 };

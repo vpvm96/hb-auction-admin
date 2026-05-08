@@ -22,3 +22,14 @@ export interface NotificationTemplateCreatePayload {
 }
 
 export type NotificationTemplateUpdatePayload = NotificationTemplateCreatePayload;
+
+export interface TemplatePreviewRequest {
+  titleTemplate?: string;
+  bodyTemplate?: string;
+  variables: Record<string, string>;
+}
+
+export interface TemplatePreviewResponse {
+  renderedTitle: string;
+  renderedBody: string;
+}
