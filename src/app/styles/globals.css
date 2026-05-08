@@ -1,0 +1,242 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   Pretendard — self-hosted from /public/fonts
+   ============================================================ */
+
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/Pretendard-Regular.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/Pretendard-Medium.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/Pretendard-SemiBold.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/Pretendard-Bold.otf') format('opentype');
+}
+@font-face {
+  font-family: 'Pretendard';
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/Pretendard-ExtraBold.otf') format('opentype');
+}
+
+/* ============================================================
+   HB Auction Design Tokens (raw, brand-level)
+   ============================================================ */
+
+:root {
+  /* Brand */
+  --hb-cyan-50: #e5f8fc;
+  --hb-cyan-100: #bceef8;
+  --hb-cyan-300: #66d8ee;
+  --hb-cyan-500: #03bae2;
+  --hb-cyan-600: #029cbe;
+  --hb-cyan-700: #027c97;
+
+  /* Status */
+  --hb-yellow-100: #fef1cc;
+  --hb-yellow-500: #fbc62f;
+  --hb-yellow-700: #c5970b;
+
+  --hb-green-100: #d2ffe6;
+  --hb-green-500: #0fca7a;
+  --hb-green-700: #04ac64;
+  --hb-green-900: #005e36;
+
+  --hb-red-100: #fec4c5;
+  --hb-red-500: #f75d5f;
+  --hb-red-700: #ca0003;
+
+  --hb-indigo-100: #e2dfff;
+  --hb-indigo-500: #695cfb;
+  --hb-indigo-700: #4537c7;
+
+  --hb-orange-300: #fdb376;
+  --hb-orange-500: #f7a23b;
+  --hb-orange-700: #c77108;
+
+  /* Neutrals */
+  --hb-fg-1: #0f1419;
+  --hb-fg-2: #2d2d2d;
+  --hb-fg-3: #72777b;
+  --hb-fg-4: #b8c0cc;
+  --hb-border: #e7eaee;
+  --hb-border-strong: #d5dbe3;
+  --hb-surface: #ffffff;
+  --hb-surface-tint: #f7f8f9;
+  --hb-app-bg: #f7f8f9;
+
+  /* Layout */
+  --admin-nav-h: 56px;
+  --admin-side-w: 240px;
+  --admin-side-w-mini: 64px;
+
+  /* Radii */
+  --radius: 0.5rem;
+}
+
+/* ============================================================
+   shadcn/ui CSS variables — mapped to HB tokens (light only)
+   ============================================================ */
+
+:root {
+  --background: var(--hb-app-bg);
+  --foreground: var(--hb-fg-1);
+  --card: var(--hb-surface);
+  --card-foreground: var(--hb-fg-1);
+  --popover: var(--hb-surface);
+  --popover-foreground: var(--hb-fg-1);
+  --primary: var(--hb-cyan-500);
+  --primary-foreground: #ffffff;
+  --secondary: var(--hb-surface-tint);
+  --secondary-foreground: var(--hb-fg-1);
+  --muted: var(--hb-surface-tint);
+  --muted-foreground: var(--hb-fg-3);
+  --accent: var(--hb-cyan-50);
+  --accent-foreground: var(--hb-cyan-700);
+  --destructive: var(--hb-red-500);
+  --destructive-foreground: #ffffff;
+  --border: var(--hb-border);
+  --input: var(--hb-border);
+  --ring: var(--hb-cyan-500);
+
+  --chart-1: var(--hb-cyan-500);
+  --chart-2: var(--hb-indigo-500);
+  --chart-3: var(--hb-green-500);
+  --chart-4: var(--hb-yellow-500);
+  --chart-5: var(--hb-orange-500);
+
+  --sidebar: var(--hb-surface);
+  --sidebar-foreground: var(--hb-fg-2);
+  --sidebar-primary: var(--hb-cyan-500);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: var(--hb-cyan-50);
+  --sidebar-accent-foreground: var(--hb-cyan-700);
+  --sidebar-border: var(--hb-border);
+  --sidebar-ring: var(--hb-cyan-500);
+}
+
+/* ============================================================
+   Tailwind v4 theme bridge
+   ============================================================ */
+
+@theme inline {
+  --font-sans:
+    'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR',
+    'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-success: var(--hb-green-500);
+  --color-warning: var(--hb-yellow-500);
+  --color-info: var(--hb-indigo-500);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
+  }
+  :focus-visible {
+    @apply ring-ring/40 outline-none ring-2 ring-offset-2 ring-offset-background;
+  }
+  /* Tabular numbers helper */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+  /* Subtle scroll style — from design */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--hb-border);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--hb-border-strong);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
