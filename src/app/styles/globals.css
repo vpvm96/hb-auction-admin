@@ -147,7 +147,9 @@
   --font-sans:
     'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR',
     'Segoe UI', Roboto, sans-serif;
-  --font-mono: ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
+  --font-mono:
+    'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR',
+    'Segoe UI', Roboto, ui-monospace, 'SFMono-Regular', 'Menlo', monospace;
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
