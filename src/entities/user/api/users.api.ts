@@ -17,6 +17,14 @@ export const usersApi = {
     const { data } = await http.get<User>(`/internal/users/${id}`);
     return data;
   },
+  suspend: async (id: string): Promise<User> => {
+    const { data } = await http.post<User>(`/internal/users/${id}/suspend`);
+    return data;
+  },
+  activate: async (id: string): Promise<User> => {
+    const { data } = await http.post<User>(`/internal/users/${id}/activate`);
+    return data;
+  },
 };
 
 export const usersKeys = {
