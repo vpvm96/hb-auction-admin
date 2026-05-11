@@ -101,12 +101,7 @@ export function DashboardPage() {
       <div className="mt-3 grid grid-cols-1 gap-3 px-6 lg:grid-cols-[2fr_1fr]">
         <Card className="overflow-hidden p-0">
           <div className="flex items-center border-b border-border px-4 py-3.5">
-            <div className="flex-1">
-              <div className="text-sm font-bold">최근 에러 로그</div>
-              <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                GET /internal/error-logs
-              </div>
-            </div>
+            <div className="flex-1 text-sm font-bold">최근 에러 로그</div>
             <Button variant="ghost" size="sm" asChild>
               <Link to={ROUTES.errors}>
                 <span>전체 보기</span>
@@ -143,9 +138,6 @@ export function DashboardPage() {
         <Card className="overflow-hidden p-0">
           <div className="border-b border-border px-4 py-3.5">
             <div className="text-sm font-bold">에러 트렌드</div>
-            <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-              GET /internal/dashboard/stats?trendDays=7
-            </div>
           </div>
           <div className="px-4 py-3.5">
             <div className="flex items-baseline gap-2">
@@ -188,12 +180,7 @@ export function DashboardPage() {
       <div className="mt-3 grid grid-cols-1 gap-3 px-6 lg:grid-cols-2">
         <Card className="overflow-hidden p-0">
           <div className="flex items-center border-b border-border px-4 py-3.5">
-            <div className="flex-1">
-              <div className="text-sm font-bold">최근 가입 사용자</div>
-              <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                GET /internal/users
-              </div>
-            </div>
+            <div className="flex-1 text-sm font-bold">최근 가입 사용자</div>
             <Button variant="ghost" size="sm" asChild>
               <Link to={ROUTES.users}>
                 <span>전체</span>
@@ -232,9 +219,6 @@ export function DashboardPage() {
         <Card className="overflow-hidden p-0">
           <div className="border-b border-border px-4 py-3.5">
             <div className="text-sm font-bold">사용자 상태 분포</div>
-            <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-              GET /internal/dashboard/stats
-            </div>
           </div>
           <div className="p-4">
             {(

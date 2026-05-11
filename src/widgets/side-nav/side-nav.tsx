@@ -1,31 +1,39 @@
+import { useEffect } from 'react';
 import { ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { NavLink } from 'react-router';
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { fmtNumber } from '@/shared/lib/format';
 import { cn } from '@/shared/lib/utils';
 import { NAV_GROUPS } from './nav-config';
 import { useNavCounts } from './use-nav-counts';
 
+const COLLAPSE_BREAKPOINT_PX = 1240;
+
 interface SideNavState {
   mini: boolean;
+  setMini: (mini: boolean) => void;
   toggle: () => void;
 }
 
-const useSideNavStore = create<SideNavState>()(
-  persist(
-    (set) => ({
-      mini: false,
-      toggle: () => set((s) => ({ mini: !s.mini })),
-    }),
-    { name: 'hb-admin-side-nav' },
-  ),
-);
+const useSideNavStore = create<SideNavState>()((set) => ({
+  mini: typeof window !== 'undefined' && window.innerWidth < COLLAPSE_BREAKPOINT_PX,
+  setMini: (mini) => set({ mini }),
+  toggle: () => set((s) => ({ mini: !s.mini })),
+}));
 
 export function SideNav() {
   const mini = useSideNavStore((s) => s.mini);
+  const setMini = useSideNavStore((s) => s.setMini);
   const toggle = useSideNavStore((s) => s.toggle);
   const counts = useNavCounts();
+
+  useEffect(() => {
+    const mql = window.matchMedia(`(max-width: ${COLLAPSE_BREAKPOINT_PX - 0.02}px)`);
+    const sync = () => setMini(mql.matches);
+    sync();
+    mql.addEventListener('change', sync);
+    return () => mql.removeEventListener('change', sync);
+  }, [setMini]);
 
   return (
     <nav
